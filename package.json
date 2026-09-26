@@ -1,15 +1,15 @@
 {
-	"name": "recordly",
-	"productName": "Recordly",
+	"name": "launchpad",
+	"productName": "Launchpad",
 	"description": "A free, creator-focused screen recorder with auto-zoom, cursor effects, backgrounds, annotations, and more - built for polished videos out of the box.",
-	"author": "webadderall",
-	"homepage": "https://github.com/webadderallorg/Recordly",
+	"author": "venocode-shit",
+	"homepage": "https://github.com/venocode-shit/lounchpad-recorder",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/webadderallorg/Recordly.git"
+		"url": "https://github.com/venocode-shit/lounchpad-recorder.git"
 	},
 	"bugs": {
-		"url": "https://github.com/webadderallorg/Recordly/issues"
+		"url": "https://github.com/venocode-shit/lounchpad-recorder/issues"
 	},
 	"private": true,
 	"version": "1.4.0",

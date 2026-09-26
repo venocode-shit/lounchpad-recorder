@@ -45,5 +45,6 @@ if (!runScript("rebuild:native")) {
 }
 
 if (!runScript("build:platform-native-helpers")) {
-	process.exit(1);
+	console.warn("[postinstall] build:platform-native-helpers failed, but continuing with basic installation.");
+	console.warn("[postinstall] Some advanced features may not be available.");
 }

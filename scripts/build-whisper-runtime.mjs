@@ -279,9 +279,18 @@ async function stageWindowsX64PrebuiltRuntime(target) {
 	const prebuiltExtractRoot = path.join(cacheRoot, `prebuilt-${target.archTag}`);
 	await rm(prebuiltExtractRoot, { recursive: true, force: true });
 	await mkdir(prebuiltExtractRoot, { recursive: true });
-	execFileSync("tar", ["-xf", windowsX64ArchivePath, "-C", prebuiltExtractRoot], {
-		stdio: "inherit",
-	});
+	
+	// Use Windows System32 tar for zip extraction on Windows to avoid Git Bash path issues
+	if (process.platform === "win32") {
+		const systemTar = "C:\\Windows\\System32\\tar.exe";
+		execFileSync(systemTar, ["-xf", windowsX64ArchivePath, "-C", prebuiltExtractRoot], {
+			stdio: "inherit",
+		});
+	} else {
+		execFileSync("tar", ["-xf", windowsX64ArchivePath, "-C", prebuiltExtractRoot], {
+			stdio: "inherit",
+		});
+	}
 
 	const runtimeDir = await findDirectoryContaining(prebuiltExtractRoot, "whisper-cli.exe");
 	if (!runtimeDir) {
@@ -315,7 +324,14 @@ async function ensureSourceTree() {
 	}
 
 	ensureTarAvailable();
-	execFileSync("tar", ["-xzf", archivePath, "-C", extractRoot], { stdio: "inherit" });
+	
+	// Use Windows System32 tar on Windows to avoid Git Bash path issues
+	if (process.platform === "win32") {
+		const systemTar = "C:\\Windows\\System32\\tar.exe";
+		execFileSync(systemTar, ["-xzf", archivePath, "-C", extractRoot], { stdio: "inherit" });
+	} else {
+		execFileSync("tar", ["-xzf", archivePath, "-C", extractRoot], { stdio: "inherit" });
+	}
 
 	if (!existsSync(path.join(extractedSourceDir, "CMakeLists.txt"))) {
 		throw new Error(
