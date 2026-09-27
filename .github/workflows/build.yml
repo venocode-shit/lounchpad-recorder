@@ -11,6 +11,9 @@ on:
         required: true
         default: 'v1.0.0'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
@@ -59,13 +62,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.os }}-build
-        path: |
-          release/*.exe
-          release/*.dmg
-          release/*.AppImage
-          release/*.deb
-          release/*.rpm
-          release/*.zip
+        path: release/
         retention-days: 30
 
   release:
@@ -79,16 +76,15 @@ jobs:
       with:
         path: ./artifacts
 
+    - name: List artifacts
+      run: find ./artifacts -type f
+
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
-        files: ./artifacts/**/*.exe
-          ./artifacts/**/*.dmg
-          ./artifacts/**/*.AppImage
-          ./artifacts/**/*.deb
-          ./artifacts/**/*.rpm
-          ./artifacts/**/*.zip
+        files: ./artifacts/*/*
         draft: false
         prerelease: false
+        fail_on_unmatched_files: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
