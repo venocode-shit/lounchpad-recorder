@@ -1,0 +1,27 @@
+{
+  "name": "Launchpad",
+  "short_name": "Launchpad",
+  "icons": [
+    {
+      "src": "/app-icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/app-icons/lounchpad-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/app-icons/lounchpad-256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "theme_color": "#fff7f7",
+  "background_color": "#332f2f",
+  "display": "standalone"
+}

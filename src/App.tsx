@@ -25,7 +25,7 @@ export default function App() {
 		() => new URLSearchParams(window.location.search).get("windowType") || "",
 	);
 	const { t } = useI18n();
-	const appIconSrc = "/app-icons/recordly-128.png";
+	const appIconSrc = "/app-icons/apple-touch-icon.png";
 
 	useEffect(() => {
 		document.documentElement.dataset.windowType = windowType;
@@ -88,7 +88,7 @@ export default function App() {
 						/>
 						<div>
 							<h1 className="text-xl font-semibold tracking-tight">
-								{t("app.name", "Recordly")}
+								{t("app.name", "Launchpad")}
 							</h1>
 							<p className="text-sm text-foreground/65">
 								{t("app.subtitle", "Screen recording and editing")}

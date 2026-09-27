@@ -65,7 +65,7 @@
         "arch": ["x64", "arm64"]
       }
     ],
-    "icon": "icons/icons/mac/icon.icns",
+    "icon": "public/app-icons/apple-touch-icon.png",
     "artifactName": "${productName}-${arch}.${ext}",
     "extendInfo": {
       "NSAudioCaptureUsageDescription": "Recordly needs audio capture permission to record system audio.",
@@ -110,7 +110,8 @@
     ],
     "icon": "icons/icons/win/icon.ico",
     "executableName": "Launchpad",
-    "artifactName": "${productName}-windows-${arch}.${ext}"
+    "artifactName": "${productName}-windows-${arch}.${ext}",
+    "signAndEditExecutable": false
   },
   "nsis": {
     "oneClick": false,
