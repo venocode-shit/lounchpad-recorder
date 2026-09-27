@@ -1,204 +1,92 @@
-
-name: Build Electron App
+name: Build Release Artifacts
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
-
-permissions:
-  contents: read
-  id-token: write
-  attestations: write
-  artifact-metadata: write
+    inputs:
+      build_version:
+        description: 'Version to build (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
-
-      - name: Install bundled FFmpeg binary
-        run: node node_modules/ffmpeg-static/install.js
-
-      - name: Verify bundled FFmpeg binary
-        run: |
-          node -e "const fs=require('node:fs'); const ffmpeg=require('ffmpeg-static'); if (typeof ffmpeg !== 'string' || !fs.existsSync(ffmpeg)) { throw new Error('Bundled ffmpeg-static binary is missing: ' + ffmpeg); } console.log('Using bundled ffmpeg binary: ' + ffmpeg);"
-
-      - name: Install app dependencies
-        run: npx electron-builder install-app-deps
-
-      - name: Build Windows app
-        shell: pwsh
-        run: |
-          npm run build:platform-native-helpers
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          npx tsc
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          npx vite build
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          npx electron-builder --win dir nsis --x64 --publish never
-
-      - name: Smoke test packaged Windows paths
-        run: npm run smoke:packaged-binaries
-
-      - name: Generate Windows artifact checksums
-        run: npm run checksums:release -- SHA256SUMS-windows.txt
-
-      - name: Attest Windows artifacts
-        uses: actions/attest@v4
-        with:
-          subject-checksums: release/SHA256SUMS-windows.txt
-
-      - name: Upload Windows build
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-x64-release
-          path: |
-            release/*.exe
-            release/*.blockmap
-            release/latest*.yml
-            release/SHA256SUMS*.txt
-          if-no-files-found: error
-          retention-days: 30
-
-  build-macos:
-    runs-on: ${{ matrix.runner }}
+  build:
     strategy:
-      fail-fast: false
       matrix:
-        include:
-          - arch: x64
-            arch_tag: darwin-x64
-            runner: macos-15-intel
-          - arch: arm64
-            arch_tag: darwin-arm64
-            runner: macos-14
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+    - name: Install dependencies
+      run: npm install
 
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
+    - name: Install native build tools (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake libx11-dev libxtst-dev libxrandr-dev libxt-dev
 
-      - name: Install bundled FFmpeg binary
-        run: node node_modules/ffmpeg-static/install.js
+    - name: Build (Windows)
+      if: matrix.os == 'windows-latest'
+      run: npm run build:win
+      env:
+        WHISPER_RUNTIME_ALLOW_MISSING: 1
 
-      - name: Verify bundled FFmpeg binary
-        run: |
-          node -e "const fs=require('node:fs'); const ffmpeg=require('ffmpeg-static'); if (typeof ffmpeg !== 'string' || !fs.existsSync(ffmpeg)) { throw new Error('Bundled ffmpeg-static binary is missing: ' + ffmpeg); } console.log('Using bundled ffmpeg binary: ' + ffmpeg);"
+    - name: Build (macOS)
+      if: matrix.os == 'macos-latest'
+      run: npm run build:mac
+      env:
+        WHISPER_RUNTIME_ALLOW_MISSING: 1
 
-      - name: Install app dependencies
-        run: npx electron-builder install-app-deps
+    - name: Build (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: npm run build:linux
+      env:
+        WHISPER_RUNTIME_ALLOW_MISSING: 1
 
-      - name: Build macOS app
-        run: |
-          npm run build:platform-native-helpers
-          npx tsc
-          npx vite build
-          npx electron-builder --mac dir dmg zip --${{ matrix.arch }} --publish never
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.os }}-build
+        path: |
+          dist/*.exe
+          dist/*.dmg
+          dist/*.AppImage
+          dist/*.deb
+          dist/*.rpm
+        retention-days: 30
 
-      - name: Smoke test packaged macOS paths
-        env:
-          PACKAGED_SMOKE_ARCH_TAGS: ${{ matrix.arch_tag }}
-        run: npm run smoke:packaged-binaries
-
-      - name: Generate macOS artifact checksums
-        run: npm run checksums:release -- SHA256SUMS-macos-${{ matrix.arch }}.txt
-
-      - name: Attest macOS artifacts
-        uses: actions/attest@v4
-        with:
-          subject-checksums: release/SHA256SUMS-macos-${{ matrix.arch }}.txt
-
-      - name: Upload macOS build
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-${{ matrix.arch }}-release
-          path: |
-            release/**/*.dmg
-            release/**/*.zip
-            release/**/*.blockmap
-            release/latest-mac.yml
-            release/SHA256SUMS*.txt
-          if-no-files-found: error
-          retention-days: 30
-
-  build-linux:
+  release:
+    needs: build
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./artifacts
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
-
-      - name: Install bundled FFmpeg binary
-        run: node node_modules/ffmpeg-static/install.js
-
-      - name: Verify bundled FFmpeg binary
-        run: |
-          node -e "const fs=require('node:fs'); const ffmpeg=require('ffmpeg-static'); if (typeof ffmpeg !== 'string' || !fs.existsSync(ffmpeg)) { throw new Error('Bundled ffmpeg-static binary is missing: ' + ffmpeg); } console.log('Using bundled ffmpeg binary: ' + ffmpeg);"
-
-      - name: Install Linux native build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libx11-dev libxt-dev libxtst-dev libxkbfile-dev libxi-dev libxrandr-dev libxinerama-dev
-
-      - name: Remove stale uiohook build output
-        run: rm -rf node_modules/uiohook-napi/build
-
-      - name: Install app dependencies
-        run: npx electron-builder install-app-deps
-
-      - name: Build Linux app
-        run: |
-          npm run build:platform-native-helpers
-          npx tsc
-          npx vite build
-          npx electron-builder --linux dir AppImage --x64 --publish never
-
-      - name: Smoke test packaged Linux paths
-        run: npm run smoke:packaged-binaries
-
-      - name: Generate Linux artifact checksums
-        run: npm run checksums:release -- SHA256SUMS-linux.txt
-
-      - name: Attest Linux artifacts
-        uses: actions/attest@v4
-        with:
-          subject-checksums: release/SHA256SUMS-linux.txt
-
-      - name: Upload Linux build
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-x64-release
-          path: |
-            release/**/*.AppImage
-            release/**/*.blockmap
-            release/latest-linux.yml
-            release/SHA256SUMS*.txt
-          if-no-files-found: error
-          retention-days: 30
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ./artifacts/**/*.exe
+          ./artifacts/**/*.dmg
+          ./artifacts/**/*.AppImage
+          ./artifacts/**/*.deb
+          ./artifacts/**/*.rpm
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
