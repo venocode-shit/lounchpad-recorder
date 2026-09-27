@@ -1,10 +1,10 @@
 export const WINDOWS_CMAKE_GENERATORS = Object.freeze([
-	{ name: "Visual Studio 16 2019", label: "VS 2019" },
-	{ name: "Visual Studio 17 2022", label: "VS 2022" },
 	{ name: "Visual Studio 18 2026", label: "VS 2026", toolset: "v143" },
+	{ name: "Visual Studio 17 2022", label: "VS 2022" },
+	{ name: "Visual Studio 16 2019", label: "VS 2019" },
 ]);
 
-export const WINDOWS_VISUAL_STUDIO_INSTALL_DIRS = Object.freeze(["2019", "2022", "18"]);
+export const WINDOWS_VISUAL_STUDIO_INSTALL_DIRS = Object.freeze(["18", "2022", "2019"]);
 
 export function configureWithWindowsCmakeGenerator({
 	prefix,

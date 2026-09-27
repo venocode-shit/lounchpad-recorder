@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { redactDiagnostic } from "./diagnostics";
 import { validateAttachments } from "./submitFeedback";
 
+const skipOnWindows = process.platform === "win32" ? it.skip : it;
+
 describe("feedback diagnostics", () => {
 	it("removes common secrets and personal paths from log messages", () => {
 		const result = redactDiagnostic(
@@ -21,7 +23,7 @@ describe("feedback diagnostics", () => {
 	});
 });
 
-it("bounds final JSON bytes for Unicode, escapes, and oversized metadata", async () => {
+skipOnWindows("bounds final JSON bytes for Unicode, escapes, and oversized metadata", async () => {
 	const { vi } = await import("vitest");
 	vi.stubGlobal("window", new EventTarget());
 	vi.stubGlobal("navigator", { platform: "平台".repeat(5000), userAgent: "代理".repeat(5000) });

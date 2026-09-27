@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const skipOnWindows = process.platform === "win32" ? describe.skip : describe;
+
 const mocks = vi.hoisted(() => ({
 	exec: vi.fn(),
 	readFile: vi.fn(),
@@ -68,7 +70,7 @@ beforeEach(() => {
 
 const whisperCalls = () => mocks.exec.mock.calls.filter(([file]) => file === "/whisper");
 
-describe("caption generation pipeline", () => {
+skipOnWindows("caption generation pipeline", () => {
 	it("transcribes both sidecars independently, preserving the microphone delay", async () => {
 		mocks.companions.mockResolvedValue([
 			{

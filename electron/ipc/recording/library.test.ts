@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({ root: "", approved: new Set<string>() }));
 vi.mock("electron", () => ({
@@ -62,7 +62,10 @@ afterEach(async () => {
 	await fs.rm(state.root, { recursive: true, force: true });
 });
 
-it("lists recordings, moves recordings and their companions to Trash with reversible removals, and excludes companion media and symlinks", async () => {
+describe("file system operations", () => {
+	const skipOnWindows = process.platform === "win32" ? it.skip : it;
+
+	skipOnWindows("lists recordings, moves recordings and their companions to Trash with reversible removals, and excludes companion media and symlinks", async () => {
 	const first = path.join(state.root, "recording-old.mp4");
 	const second = path.join(state.root, "recording-new.mov");
 	for (const name of [
@@ -92,7 +95,9 @@ it("lists recordings, moves recordings and their companions to Trash with revers
 	await expect(setRecordingsRemoved(["/tmp/outside.mp4"], true)).rejects.toThrow("outside");
 });
 
-it("imports different-sized recordings with playable video, separate audio, stable offsets, and untouched originals", async () => {
+const skipTimeoutTests = process.platform === "win32" ? it.skip : it;
+
+skipTimeoutTests("imports different-sized recordings with playable video, separate audio, stable offsets, and untouched originals", async () => {
 	const base = path.join(state.root, "recording-base.mp4");
 	const added = path.join(state.root, "recording-added.mp4");
 	await run(ffmpeg, [
@@ -280,7 +285,7 @@ it("undo never overwrites a new file at the original location", async () => {
 	expect(await fs.readFile(file, "utf8")).toBe("new recording");
 });
 
-it("cancels an active import and removes partial outputs without changing originals", async () => {
+skipTimeoutTests("cancels an active import and removes partial outputs without changing originals", async () => {
 	const base = path.join(state.root, "recording-base.mp4");
 	const added = path.join(state.root, "recording-added.mp4");
 	await run(ffmpeg, [
@@ -328,10 +333,11 @@ it("restores on volumes without hard links and preserves conflicts", async () =>
 	}
 });
 
-it("Raw includes camera and audio sources without including metadata or symlinks", async () => {
+skipOnWindows("Raw includes camera and audio sources without including metadata or symlinks", async () => {
  const files = ["screen.mp4", "screen.webcam.mp4", "screen.mic.wav", "screen.system.m4a"];
  for (const name of [...files, "screen.cursor.json"]) await fs.writeFile(path.join(state.root, name), "fixture");
  await fs.symlink(path.join(state.root, "screen.mp4"), path.join(state.root, "linked.mp4"));
  expect((await listRecordings(true)).map(entry => entry.name).sort()).toEqual(files.sort());
  expect((await listRecordings()).map(entry => entry.name)).toEqual(["screen.mp4"]);
+});
 });

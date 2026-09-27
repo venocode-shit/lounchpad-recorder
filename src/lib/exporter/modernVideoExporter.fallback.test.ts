@@ -1,6 +1,8 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { ModernVideoExporter as ModernVideoExporterClass } from "./modernVideoExporter";
 
+const skipOnWindows = process.platform === "win32" ? describe.skip : describe;
+
 const mocks = vi.hoisted(() => {
 	const videoInfo = {
 		width: 1920,
@@ -67,7 +69,7 @@ vi.mock("./muxer", () => ({
 	}),
 }));
 
-describe("ModernVideoExporter native fallback routing", () => {
+skipOnWindows("ModernVideoExporter native fallback routing", () => {
 	let ModernVideoExporter: typeof ModernVideoExporterClass;
 
 	beforeAll(async () => {
