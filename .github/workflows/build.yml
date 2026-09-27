@@ -42,13 +42,13 @@ jobs:
 
     - name: Build (Windows)
       if: matrix.os == 'windows-latest'
-      run: npm run build:win -- --publish=never
+      run: npm run build:win -- --publish never
       env:
         WHISPER_RUNTIME_ALLOW_MISSING: 1
 
     - name: Build (macOS)
       if: matrix.os == 'macos-latest'
-      run: npm run build:mac -- --publish=never
+      run: npm run build:mac -- --publish never
       env:
         WHISPER_RUNTIME_ALLOW_MISSING: 1
 
@@ -79,12 +79,18 @@ jobs:
     - name: List artifacts
       run: find ./artifacts -type f
 
+    - name: Filter main application files
+      run: |
+        mkdir -p ./release-artifacts
+        find ./artifacts -type f \( -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o -name "*.zip" \) -exec cp {} ./release-artifacts/ \;
+
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
-        files: ./artifacts/*/*
+        files: ./release-artifacts/*
         draft: false
         prerelease: false
         fail_on_unmatched_files: false
+        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

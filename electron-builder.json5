@@ -49,15 +49,7 @@
       "to": "assets/wallpapers"
     }
   ],
-  "publish": [
-    {
-      "provider": "github",
-      "owner": "venocode-shit",
-      "repo": "lounchpad-recorder",
-      "tagNamePrefix": "v",
-      "publishAutoUpdate": true
-    }
-  ],
+  "publish": null,
 
   "mac": {
     "hardenedRuntime": true,
