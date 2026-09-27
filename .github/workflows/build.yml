@@ -39,19 +39,19 @@ jobs:
 
     - name: Build (Windows)
       if: matrix.os == 'windows-latest'
-      run: npm run build:win
+      run: npm run build:win -- --publish=never
       env:
         WHISPER_RUNTIME_ALLOW_MISSING: 1
 
     - name: Build (macOS)
       if: matrix.os == 'macos-latest'
-      run: npm run build:mac
+      run: npm run build:mac -- --publish=never
       env:
         WHISPER_RUNTIME_ALLOW_MISSING: 1
 
     - name: Build (Linux)
       if: matrix.os == 'ubuntu-latest'
-      run: npm run build:linux
+      run: npm run build:linux -- --publish=never
       env:
         WHISPER_RUNTIME_ALLOW_MISSING: 1
 
@@ -60,11 +60,12 @@ jobs:
       with:
         name: ${{ matrix.os }}-build
         path: |
-          dist/*.exe
-          dist/*.dmg
-          dist/*.AppImage
-          dist/*.deb
-          dist/*.rpm
+          release/*.exe
+          release/*.dmg
+          release/*.AppImage
+          release/*.deb
+          release/*.rpm
+          release/*.zip
         retention-days: 30
 
   release:
@@ -86,6 +87,7 @@ jobs:
           ./artifacts/**/*.AppImage
           ./artifacts/**/*.deb
           ./artifacts/**/*.rpm
+          ./artifacts/**/*.zip
         draft: false
         prerelease: false
       env:
